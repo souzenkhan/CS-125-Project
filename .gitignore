@@ -1,1 +1,14 @@
 .gitignore = “Swift”,
+# Python virtual environments
+.venv/
+server/.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# Xcode
+DerivedData/
