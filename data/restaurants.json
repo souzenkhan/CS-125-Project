@@ -1,0 +1,30 @@
+[
+  {
+    "id": 1,
+    "name": "Sababa Falafel Grill",
+    "rating": 4.6,
+    "review_count": 230,
+    "tags": ["halal", "middle eastern"]
+  },
+  {
+    "id": 2,
+    "name": "Noorani",
+    "rating": 4.8,
+    "review_count": 410,
+    "tags": ["halal", "pakistani"]
+  },
+  {
+    "id": 3,
+    "name": "Ike's Love and Sandwiches",
+    "rating": 4.7,
+    "review_count": 1200,
+    "tags": ["american"]
+  },
+  {
+    "id": 4,
+    "name": "Chris n Eddys",
+    "rating": 4.2,
+    "review_count": 980,
+    "tags": ["american"]
+  }
+]
