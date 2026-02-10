@@ -1,6 +1,6 @@
 How to download packages for server
 Makes the assumption your virtuan environment is called venv:
-Run the following commands in terminal:
+Run the following commands in terminal (from the server folder):
 
 python3 -m venv .venv
 source .venv/bin/activate
