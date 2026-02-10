@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-import SwiftUI
 
 struct ResultsView: View {
     let restaurants: [Restaurant]
@@ -18,18 +17,15 @@ struct ResultsView: View {
                 Text(restaurant.name)
                     .font(.headline)
 
-                Text(restaurant.dietaryTags.joined(separator: ", "))
+                Text("⭐️ \(restaurant.rating)")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
 
-                HStack {
-                    Text("⭐️ \(restaurant.rating, specifier: "%.1f")")
-                    Spacer()
-                    Text("\(restaurant.distanceMiles, specifier: "%.1f") mi")
+                if !restaurant.why.isEmpty {
+                    Text(restaurant.why.joined(separator: ", "))
+                        .font(.caption)
+                        .foregroundColor(.gray)
                 }
-                .font(.caption)
             }
-            .padding(.vertical, 6)
         }
         .navigationTitle("Results")
     }
