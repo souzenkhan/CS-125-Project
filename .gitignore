@@ -12,3 +12,6 @@ __pycache__/
 
 # Xcode
 DerivedData/
+# local backups
+*.bak
+
