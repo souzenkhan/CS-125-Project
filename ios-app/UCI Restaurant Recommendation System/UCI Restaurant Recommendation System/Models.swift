@@ -7,10 +7,21 @@
 
 import Foundation
 
-struct Restaurant: Identifiable {
-    let id: String
+struct Restaurant: Identifiable, Codable {
+    let id: Int
     let name: String
-    let dietaryTags: [String]
+    let dietary_tags: [String]
     let rating: Double
-    let distanceMiles: Double
+    let review_count: Int?
+    let score: Double
+    let why: [String]
+}
+
+struct RecommendRequest: Codable {
+    let halal: Bool
+    let top_k: Int
+}
+
+struct RecommendResponse: Codable {
+    let results: [Restaurant]
 }

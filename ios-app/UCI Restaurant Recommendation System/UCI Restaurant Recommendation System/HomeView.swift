@@ -12,27 +12,12 @@ struct HomeView: View {
     @State private var vegan = false
     @State private var vegetarian = false
     @State private var glutenFree = false
+    @State private var results: [Restaurant] = []
+    @State private var isLoading = false
     
     @State private var maxDistance: Double = 1.0
     @State private var showResults = false
     
-    let dummyRestaurants: [Restaurant] = [
-        Restaurant(id: "moongoat_coffee",
-                   name: "MoonGoat Coffee",
-                   dietaryTags: ["vegan", "vegetarian"],
-                   rating: 4.4,
-                   distanceMiles: 0.4),
-        Restaurant(id: "halal_shack",
-                   name: "Halal Shack",
-                   dietaryTags: ["halal", "vegetarian"],
-                   rating: 3.5,
-                   distanceMiles: 0.1),
-        Restaurant(id: "chipotle",
-                   name: "Chipotle",
-                   dietaryTags: ["vegetarian"],
-                   rating: 4.0,
-                   distanceMiles: 1.1),
-    ]
     var body: some View {
         NavigationStack {
             Form{
@@ -48,15 +33,31 @@ struct HomeView: View {
                 }
                 Section {
                     Button("Get Recommendations") {
-                        showResults = true
+                        Task {
+                            await fetchRecommendations()
+                        }
                     }
                 }
             }
             .navigationTitle("Find Food")
             .navigationDestination(isPresented: $showResults) {
-                ResultsView(restaurants: dummyRestaurants)
+                ResultsView(restaurants: results)
             }
         }
+    }
+
+    func fetchRecommendations() async {
+        print("FETCH CALLED")
+        isLoading = true
+        do {
+            let request = RecommendRequest(halal: halal, top_k: 5)
+
+            results = try await APIClient.shared.recommend(request: request)
+            showResults = true
+        } catch {
+            print("API error:", error)
+        }
+        isLoading = false
     }
 }
 
