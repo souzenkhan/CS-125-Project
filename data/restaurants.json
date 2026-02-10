@@ -2,7 +2,11 @@
   {
     "id": "moongoat_coffee",
     "name": "MoonGoat Coffee",
-    "dietary_tags": ["vegan", "vegetarian", "gluten free"],
+    "dietary_tags": [
+      "vegan",
+      "vegetarian",
+      "gluten_free"
+    ],
     "rating": 4.4,
     "price_level": 2,
     "address": "5171 California Ave Unit 100, Irvine, CA 92617",
@@ -13,85 +17,123 @@
     "review_count": 133,
     "phone": "(949) 612-2875",
     "menu_text": "Coffee, pastries, and light breakfast items",
-    "cuisines": ["American"],
-    "categories": ["Cafe", "Fast Food"]
+    "cuisines": [
+      "American"
+    ],
+    "categories": [
+      "Cafe",
+      "Fast Food"
+    ]
   },
   {
     "id": "herb_and_ranch",
     "name": "Herb & Ranch",
-    "dietary_tags": ["vegetarian"],
+    "dietary_tags": [
+      "vegetarian"
+    ],
     "rating": 4.5,
     "price_level": 2,
     "address": "5301 California Ave #140, Irvine, CA 92617",
-    "lat": 33.63579319218425, 
+    "lat": 33.63579319218425,
     "lng": -117.84741623999211,
     "hours_text": "Mon–Fri 7:30am-3pm",
     "source": "google",
     "review_count": 98,
     "phone": "(949) 316-4491",
     "menu_text": "Breakfast, lunch, and coffee options.",
-    "cuisines": ["American", "Fusion", "Asian"],
-    "categories": ["Restaurant"]
+    "cuisines": [
+      "American",
+      "Fusion",
+      "Asian"
+    ],
+    "categories": [
+      "Restaurant"
+    ]
   },
   {
     "id": "in_n_out_burger",
     "name": "In-N-Out Burger",
-    "dietary_tags": ["vegetarian"],
+    "dietary_tags": [
+      "vegetarian"
+    ],
     "rating": 4.6,
     "price_level": 1,
     "address": "4115 Campus Dr, Irvine, CA 92612",
-    "lat": 33.65038191115322, 
+    "lat": 33.65038191115322,
     "lng": -117.84023409194793,
     "hours_text": "Sun-Thu 10:30am-1am, Fri-Sat 10:30am-1:30am",
     "source": "google",
     "review_count": 3944,
     "phone": "(800) 786-1000",
     "menu_text": "American fast food including burgers, fries, shakes.",
-    "cuisines": ["American"],
-    "categories": ["Fast Food", "Restaurant"]
+    "cuisines": [
+      "American"
+    ],
+    "categories": [
+      "Fast Food",
+      "Restaurant"
+    ]
   },
   {
     "id": "subway",
     "name": "Subway",
-    "dietary_tags": ["vegetarian"],
+    "dietary_tags": [
+      "vegetarian"
+    ],
     "rating": 3.3,
     "price_level": 1,
     "address": "A233 Student Center Food Court, Irvine, CA 92697",
-    "lat": 33.64915203862715, 
+    "lat": 33.64915203862715,
     "lng": -117.84237200918868,
     "hours_text": "Mon–Thu 9am–7pm, Fri 9am-5pm",
     "source": "google",
     "review_count": 15,
     "phone": "(949) 824-0656",
     "menu_text": "Casual counter-serve chain for build-your-own sandwiches & salads, with health-conscious options.",
-    "cuisines": ["American"],
-    "categories": ["Fast Food"]
+    "cuisines": [
+      "American"
+    ],
+    "categories": [
+      "Fast Food"
+    ]
   },
   {
     "id": "chick_fil_a",
     "name": "Chick-fil-A",
-    "dietary_tags": ["vegan", "vegetarian"],
+    "dietary_tags": [
+      "vegan",
+      "vegetarian"
+    ],
     "rating": 4.4,
     "price_level": 2,
     "address": "4127 Campus Dr, Irvine, CA 92612",
-    "lat": 33.649734892921096, 
+    "lat": 33.649734892921096,
     "lng": -117.83961177970747,
     "hours_text": "Mon–Sat 6:30am–11pm",
     "source": "google",
     "review_count": 1226,
     "phone": "(949) 725-0230",
     "menu_text": "Fast-food chain serving chicken sandwiches & nuggets along with salads & sides.",
-    "cuisines": ["American"],
-    "categories": ["Restaurant", "Fast Food"]
+    "cuisines": [
+      "American"
+    ],
+    "categories": [
+      "Restaurant",
+      "Fast Food"
+    ]
   },
   {
     "id": "blue_bowl_superfoods",
     "name": "Blue Bowl Superfoods",
-    "dietary_tags": ["vegan", "vegetarian", "gluten free"],
+    "dietary_tags": [
+      "vegan",
+      "vegetarian",
+      "gluten_free"
+    ],
     "rating": 4.6,
     "price_level": 2,
     "address": "4255 Campus Dr A104, Irvine, CA 92612",
-    "lat": 33.64932406050582, 
+    "lat": 33.64932406050582,
     "lng": -117.83906460908902,
     "hours_text": "Mon–Sun 8am–6pm",
     "source": "google",
@@ -99,108 +141,148 @@
     "phone": null,
     "menu_text": "Acai bowls, smoothies, and healthy options",
     "cuisines": null,
-    "categories": ["Healthy"]
+    "categories": [
+      "Healthy"
+    ]
   },
   {
     "id": "iro_sushi_stuff_x_roll",
     "name": "Iro Sushi - Stuff x Roll",
-    "dietary_tags": ["vegetarian"],
+    "dietary_tags": [
+      "vegetarian"
+    ],
     "rating": 4.5,
     "price_level": 2,
     "address": "5301 California Ave #140, Irvine, CA 92617",
-    "lat": 33.64994923948976, 
+    "lat": 33.64994923948976,
     "lng": -117.83868909984108,
     "hours_text": "Mon–Sun 11am-9pm",
     "source": "google",
     "review_count": 73,
     "phone": "(949) 393-3993",
     "menu_text": "Sushi rolls and dessert options",
-    "cuisines": ["Japanese", "Fusion", "Asian"],
-    "categories": ["Restaurant", "Desserts"]
+    "cuisines": [
+      "Japanese",
+      "Fusion",
+      "Asian"
+    ],
+    "categories": [
+      "Restaurant",
+      "Desserts"
+    ]
   },
   {
     "id": "dunkin",
     "name": "Dunkin'",
-    "dietary_tags": ["vegetarian"],
+    "dietary_tags": [
+      "vegetarian"
+    ],
     "rating": 3.9,
     "price_level": 1,
     "address": "4139 Campus Dr, Irvine, CA 92612",
-    "lat": 33.65006980920007, 
+    "lat": 33.65006980920007,
     "lng": -117.83912361768513,
     "hours_text": "Mon-Sun 6am-7pm",
     "source": "google",
     "review_count": 269,
     "phone": "(949) 333-3625",
     "menu_text": "Long-running chain serving signature breakfast items & a variety of coffee drinks.",
-    "cuisines": ["American"],
-    "categories": ["Fast Food", "Cafe"]
+    "cuisines": [
+      "American"
+    ],
+    "categories": [
+      "Fast Food",
+      "Cafe"
+    ]
   },
   {
     "id": "luna_grill_university_center",
     "name": "Luna Grill University Center",
-    "dietary_tags": ["vegan", "vegetarian", "pescatarian"],
+    "dietary_tags": [
+      "vegan",
+      "vegetarian",
+      "pescatarian"
+    ],
     "rating": 4.5,
-    "price_level": null,
+    "price_level": 2,
     "address": "5171 California Ave Unit 100, Irvine, CA 92617",
-    "lat": 33.65071111247775, 
+    "lat": 33.65071111247775,
     "lng": -117.83890574259425,
     "hours_text": "Mon–Sun 11am–8:30pm",
     "source": "google",
     "review_count": 512,
     "phone": "(949) 861-2667",
     "menu_text": "Kebabs, salads & other Mediterranean eats offered in a relaxed, counter-serve setting.",
-    "cuisines": ["Mediterranean"],
-    "categories": ["Restaurant"]
+    "cuisines": [
+      "Mediterranean"
+    ],
+    "categories": [
+      "Restaurant"
+    ]
   },
   {
     "id": "northern_cafe",
     "name": "Northern Cafe",
-    "dietary_tags": null,
+    "dietary_tags": [],
     "rating": 4.1,
     "price_level": 2,
     "address": "4175 Campus Dr, Irvine, CA 92612",
-    "lat": 33.65106421515516, 
+    "lat": 33.65106421515516,
     "lng": -117.83877610614847,
     "hours_text": "Mon–Sun 11am-9:30am",
     "source": "google",
     "review_count": 382,
     "phone": "(949) 418-7309",
     "menu_text": "Chinese restaurant with lunch, dinner and dessert options.",
-    "cuisines": ["Chinese"],
-    "categories": ["Restaurant"]
+    "cuisines": [
+      "Chinese"
+    ],
+    "categories": [
+      "Restaurant"
+    ]
   },
   {
     "id": "insomnia_cookies",
     "name": "In-N-Out Burger",
-    "dietary_tags": ["vegetarian"],
+    "dietary_tags": [
+      "vegetarian"
+    ],
     "rating": 4.2,
-    "price_level": null,
+    "price_level": 2,
     "address": "4187 Campus Dr, Irvine, CA 92612",
-    "lat": 33.65092041234402, 
-    "lng": -117.83879775243187 ,
+    "lat": 33.65092041234402,
+    "lng": -117.83879775243187,
     "hours_text": "Mon-Sun 11am-1am",
     "source": "google",
     "review_count": 154,
     "phone": "(657) 900-5114",
     "menu_text": "Bakery chain known for warm cookies, ice cream & late-night deliveries.",
     "cuisines": null,
-    "categories": ["Desserts"]
+    "categories": [
+      "Desserts"
+    ]
   },
   {
     "id": "tenori",
     "name": "Tenori",
-    "dietary_tags": ["pescatarian"],
+    "dietary_tags": [
+      "pescatarian"
+    ],
     "rating": 4.2,
     "price_level": 1,
     "address": "4237 Campus Dr B163, Irvine, CA 92612",
-    "lat": 33.650412717801004, 
+    "lat": 33.650412717801004,
     "lng": -117.83823400243283,
     "hours_text": "Mon–Sun 11am-10pm",
     "source": "google",
     "review_count": 32,
     "phone": "(949) 932-0644",
     "menu_text": "Japanese restaurant with quick rice options.",
-    "cuisines": ["Japanese"],
-    "categories": ["Restaurant"]
+    "cuisines": [
+      "Japanese"
+    ],
+    "categories": [
+      "Restaurant"
+    ]
   }
 ]
