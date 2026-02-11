@@ -1,4 +1,4 @@
-[
+﻿[
   {
     "id": "moongoat_coffee",
     "name": "MoonGoat Coffee",
@@ -202,5 +202,92 @@
     "menu_text": "Japanese restaurant with quick rice options.",
     "cuisines": ["Japanese"],
     "categories": ["Restaurant"]
+  },
+  {
+    "id": "cha_for_tea",
+    "name": "Cha for Tea",
+    "dietary_tags": ["vegetarian"],
+    "rating": 4.3,
+    "price_level": 2,
+    "address": "4187 Campus Dr #M174, Irvine, CA 92612",
+    "lat": 33.65092,
+    "lng": -117.83875,
+    "hours_text": "Mon–Sun 11am–10pm",
+    "source": "google",
+    "review_count": 1500,
+    "phone": "(949) 854-2888",
+    "menu_text": "Popular boba tea spot offering milk teas, fruit teas, snacks, and Taiwanese-style fried food.",
+    "cuisines": ["Taiwanese", "Asian"],
+    "categories": ["Cafe", "Desserts"]
+  },
+  {
+    "id": "le_diplomate_cafe",
+    "name": "Le Diplomate Cafe",
+    "dietary_tags": ["vegetarian"],
+    "rating": 4.4,
+    "price_level": 2,
+    "address": "4249 Campus Dr, Irvine, CA 92612",
+    "lat": 33.65045,
+    "lng": -117.83818,
+    "hours_text": "Mon–Sun 8am–6pm",
+    "source": "google",
+    "review_count": 300,
+    "phone": "(949) 552-9111",
+    "menu_text": "Cozy European-style cafe serving crepes, pastries, espresso drinks, and light breakfast plates.",
+    "cuisines": ["French", "Cafe"],
+    "categories": ["Cafe", "Restaurant"]
+  },
+  {
+    "id": "california_gogi_grill_uc",
+    "name": "California Gogi Grill (University Center)",
+    "dietary_tags": ["vegetarian"],
+    "rating": 4.4,
+    "price_level": 2,
+    "address": "4255 Campus Dr, Irvine, CA 92612",
+    "lat": 33.6493,
+    "lng": -117.8393,
+    "hours_text": "Daily (varies)",
+    "source": "google",
+    "review_count": 450,
+    "phone": null,
+    "menu_text": "Korean-style bowls and plates with rice, veggies, and protein options; flavorful sauces and quick service.",
+    "cuisines": ["Korean"],
+    "categories": ["Restaurant"]
+  },
+  {
+    "id": "peets_coffee_university_center",
+    "name": "Peet's Coffee",
+    "dietary_tags": ["vegetarian"],
+    "rating": 4.2,
+    "price_level": 2,
+    "address": "4187 Campus Dr, Irvine, CA 92612",
+    "lat": 33.65080,
+    "lng": -117.83860,
+    "hours_text": "Mon–Sun 5:30am–7pm",
+    "source": "google",
+    "review_count": 400,
+    "phone": "(949) 509-9470",
+    "menu_text": "Coffee chain serving espresso drinks, cold brews, breakfast sandwiches, and pastries.",
+    "cuisines": ["American"],
+    "categories": ["Cafe"]
+  },
+  {
+    "id": "the_halal_shack_uci",
+    "name": "The Halal Shack (UCI Student Center)",
+    "dietary_tags": ["halal"],
+    "rating": 4.3,
+    "price_level": 2,
+    "address": "3901-3935 Pereira Dr, A-234 Student Center, Irvine, CA 92697",
+    "lat": 33.6489,
+    "lng": -117.8426,
+    "hours_text": "Mon–Fri (varies by quarter)",
+    "source": "google",
+    "review_count": 120,
+    "phone": null,
+    "menu_text": "Halal rice bowls, wraps, and salads with options like chicken, gyro-style beef, falafel, and sauces.",
+    "cuisines": ["Middle Eastern", "Mediterranean"],
+    "categories": ["Restaurant", "Fast Food"]
   }
 ]
+
+
