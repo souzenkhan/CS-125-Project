@@ -8,7 +8,7 @@
 import Foundation
 
 struct Restaurant: Identifiable, Codable {
-    let id: Int
+    let id: String
     let name: String
     let dietary_tags: [String]
     let rating: Double

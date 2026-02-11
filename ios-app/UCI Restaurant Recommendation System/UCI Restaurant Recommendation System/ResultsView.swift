@@ -17,7 +17,7 @@ struct ResultsView: View {
                 Text(restaurant.name)
                     .font(.headline)
 
-                Text("⭐️ \(restaurant.rating)")
+                Text(String(format: "Rating: %.1f", restaurant.rating))
                     .font(.subheadline)
 
                 if !restaurant.why.isEmpty {
