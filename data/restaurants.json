@@ -161,7 +161,7 @@
     "address": "4175 Campus Dr, Irvine, CA 92612",
     "lat": 33.65106421515516, 
     "lng": -117.83877610614847,
-    "hours_text": "Mon–Sun 11am-9:30am",
+    "hours_text": "Mon–Sun 11am-9:30pm",
     "source": "google",
     "review_count": 382,
     "phone": "(949) 418-7309",
@@ -171,7 +171,7 @@
   },
   {
     "id": "insomnia_cookies",
-    "name": "In-N-Out Burger",
+    "name": "Insomnia Cookies",
     "dietary_tags": ["vegetarian"],
     "rating": 4.2,
     "price_level": 1,
