@@ -20,6 +20,7 @@ app = FastAPI(title="Project36 Restaurant Recommender", version="0.1.0")
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_PATH = REPO_ROOT / "data" / "restaurants.json"
 
+
 def load_restaurants(path: Path) -> List[Dict[str, Any]]:
     """Loads restaurant data from JSON.
     Accepts either:
@@ -53,6 +54,7 @@ def load_restaurants(path: Path) -> List[Dict[str, Any]]:
 
     return cleaned
 
+
 # Global cache (reloaded on refresh)
 RESTAURANTS: List[Dict[str, Any]] = load_restaurants(DATA_PATH)
 
@@ -69,6 +71,7 @@ id_to_index: Dict[str, int] = {}
 _PUNCT_RE = re.compile(r"[^a-z0-9\s]")
 _WS_RE = re.compile(r"\s+")
 
+
 def _as_str_list(x: Any) -> List[str]:
     if x is None:
         return []
@@ -76,11 +79,13 @@ def _as_str_list(x: Any) -> List[str]:
         return [str(v) for v in x if v is not None]
     return [str(x)]
 
+
 def _clean(s: str) -> str:
     s = s.lower()
     s = _PUNCT_RE.sub(" ", s)
     s = _WS_RE.sub(" ", s).strip()
     return s
+
 
 def _expand_tags(tags: List[str]) -> List[str]:
     """Include both underscore and space forms, e.g., gluten_free + gluten free."""
@@ -90,6 +95,7 @@ def _expand_tags(tags: List[str]) -> List[str]:
         if "_" in t:
             expanded.append(t.replace("_", " "))
     return expanded
+
 
 def build_doc_text(r: Dict[str, Any]) -> str:
     name = r.get("name", "") or ""
@@ -118,6 +124,7 @@ def build_doc_text(r: Dict[str, Any]) -> str:
 
     return _clean(" ".join(p for p in parts if p))
 
+
 # ----------------------------
 # Helpers (numbers, distance, etc.)
 # ----------------------------
@@ -131,10 +138,12 @@ def get_number(x: Any, default: float = 0.0) -> float:
     except (TypeError, ValueError):
         return default
 
+
 # Campus center (approx) - simple demo reference point
 CAMPUS_LAT = 33.6405
 CAMPUS_LNG = -117.8443
 MAX_DISTANCE_MILES = 2.0  # beyond this distance_score becomes 0
+
 
 def haversine_miles(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     R = 3958.8
@@ -145,6 +154,7 @@ def haversine_miles(lat1: float, lng1: float, lat2: float, lng2: float) -> float
     a = (math.sin(dphi / 2) ** 2 +
          math.cos(phi1) * math.cos(phi2) * (math.sin(dlambda / 2) ** 2))
     return 2 * R * math.asin(math.sqrt(a))
+
 
 def distance_score(r: Dict[str, Any]) -> float:
     lat = get_number(r.get("lat"), None)  # type: ignore[arg-type]
@@ -157,6 +167,7 @@ def distance_score(r: Dict[str, Any]) -> float:
         return 0.0
 
     return max(0.0, 1.0 - (d / MAX_DISTANCE_MILES))
+
 
 def open_score(r: Dict[str, Any]) -> float:
     """
@@ -172,9 +183,105 @@ def open_score(r: Dict[str, Any]) -> float:
         return 1.0
     return 0.5
 
+
 def rating_score(r: Dict[str, Any]) -> float:
     rating = get_number(r.get("rating"), 0.0)
     return min(max(rating / 5.0, 0.0), 1.0)
+
+
+def miles_away(r: Dict[str, Any]) -> Optional[float]:
+    """Actual distance in miles (for explanations)."""
+    lat = r.get("lat")
+    lng = r.get("lng")
+    if lat is None or lng is None:
+        return None
+    try:
+        return haversine_miles(CAMPUS_LAT, CAMPUS_LNG, float(lat), float(lng))
+    except Exception:
+        return None
+
+
+def extract_query_terms(query_text: str) -> List[str]:
+    """
+    Pick 1–2 meaningful terms from the user's query for explanation.
+    Keep it simple + deterministic.
+    """
+    STOP = {
+        "food", "restaurant", "restaurants", "near", "nearby", "uc", "uci",
+        "campus", "open", "now", "best", "good", "cheap", "in", "out",
+        "the", "a", "an", "and", "or", "to", "for"
+    }
+    tokens = [t.strip().lower() for t in query_text.replace("_", " ").split()]
+    tokens = [t for t in tokens if t and t not in STOP and len(t) >= 3]
+
+    seen = set()
+    uniq: List[str] = []
+    for t in tokens:
+        if t not in seen:
+            uniq.append(t)
+            seen.add(t)
+
+    return uniq[:2]
+
+
+def term_appears_in_doc(term: str, doc_text: str) -> bool:
+    return term in doc_text
+
+
+def build_why(
+    *,
+    req: "RecommendRequest",
+    r: Dict[str, Any],
+    query_text: str,
+    tfidf: float,
+    dist_miles: Optional[float],
+    opn: float,
+    rate_norm: float,
+) -> List[str]:
+    """
+    Return 3–5 concise explanation bullets grounded in scoring signals.
+    """
+    why: List[str] = []
+
+    dietary_tags = r.get("dietary_tags") or []
+
+    # 1) Dietary constraint
+    if req.halal and "halal" in dietary_tags:
+        why.append("matches halal")
+
+    # 2) Query term match (specific)
+    doc = build_doc_text(r)
+    terms = extract_query_terms(query_text)
+    matched_terms = [t for t in terms if term_appears_in_doc(t, doc)]
+
+    if matched_terms:
+        why.append(f"query match: {', '.join(matched_terms)}")
+    elif tfidf > 0.0 and query_text.strip():
+        why.append("matches search terms")
+
+    # 3) Distance
+    if dist_miles is not None:
+        why.append(f"{dist_miles:.1f} mi away")
+        if dist_miles <= 0.8:
+            why.append("walkable distance")
+
+    # 4) Open / closing soon (simple heuristic)
+    hours = (r.get("hours_text") or "").lower()
+    if "closed" in hours:
+        why.append("may be closed")
+    else:
+        why.append("open now")
+
+    # 5) Rating
+    rating_val = get_number(r.get("rating"), 0.0)
+    if rate_norm >= 0.8:
+        why.append(f"high rating ({rating_val:.1f})")
+    elif rating_val > 0:
+        why.append(f"rating {rating_val:.1f}")
+
+    # Ensure 3–5 bullets
+    return why[:5]
+
 
 # ----------------------------
 # API Models
@@ -184,6 +291,7 @@ class RecommendRequest(BaseModel):
     top_k: int = Field(default=5, ge=1, le=50)
     query: Optional[str] = None
 
+
 # ----------------------------
 # Build TF-IDF at startup
 # ----------------------------
@@ -191,7 +299,6 @@ class RecommendRequest(BaseModel):
 def build_tfidf_index() -> None:
     global vectorizer, tfidf_matrix, id_to_index, RESTAURANTS
 
-    # Load fresh in case file changed before startup
     RESTAURANTS = load_restaurants(DATA_PATH)
 
     corpus: List[str] = []
@@ -208,12 +315,14 @@ def build_tfidf_index() -> None:
 
     print(f"TF-IDF ready: {tfidf_matrix.shape[0]} documents")
 
+
 # ----------------------------
 # Routes
 # ----------------------------
 @app.get("/health")
 def health():
     return {"ok": True, "count": len(RESTAURANTS)}
+
 
 @app.post("/recommend")
 def recommend(req: RecommendRequest):
@@ -222,7 +331,6 @@ def recommend(req: RecommendRequest):
     if vectorizer is None or tfidf_matrix is None:
         raise HTTPException(status_code=500, detail="TF-IDF index not initialized.")
 
-    # Start from full set
     candidates = list(RESTAURANTS)
 
     # Hard filter: halal
@@ -235,16 +343,11 @@ def recommend(req: RecommendRequest):
     # Build query text
     query_text = (req.query or "").strip()
     if req.halal:
-        # reinforce importance (also helps explanations)
         query_text = (query_text + " halal").strip()
-
     if query_text == "":
         query_text = "food"
 
-    # TF-IDF query vector
     query_vec = vectorizer.transform([query_text])
-
-    # Cosine similarity with TF-IDF vectors (since sklearn TF-IDF vectors are L2-normalized)
     similarity_scores = (tfidf_matrix @ query_vec.T).toarray().flatten()
 
     scored_results: List[tuple] = []
@@ -277,35 +380,20 @@ def recommend(req: RecommendRequest):
 
     for final_score, tfidf, dist, opn, rate, r in scored_results[: req.top_k]:
         dietary_tags = r.get("dietary_tags") or []
+        dist_miles = miles_away(r)
 
-        why: List[str] = []
-
-        # Dietary
-        if req.halal and "halal" in dietary_tags:
-            why.append("matches halal requirement")
-
-        # Text
-        if tfidf > 0.0:
-            why.append("matches search terms")
-
-        # Distance
-        if dist > 0.7:
-            why.append("very close to campus")
-        elif dist > 0.4:
-            why.append("near campus")
-
-        # Open
-        if opn == 1.0:
-            why.append("open now")
-        elif opn == 0.0:
-            why.append("may be closed")
-
-        # Rating
-        if rate >= 0.8:
-            why.append(f"high rating ({r.get('rating')})")
+        why = build_why(
+            req=req,
+            r=r,
+            query_text=query_text,
+            tfidf=tfidf,
+            dist_miles=dist_miles,
+            opn=opn,
+            rate_norm=rate,
+        )
 
         output.append({
-            # Restaurant fields (unchanged)
+            # Restaurant fields
             "id": r.get("id"),
             "name": r.get("name"),
             "dietary_tags": dietary_tags,
@@ -334,6 +422,7 @@ def recommend(req: RecommendRequest):
         })
 
     return output
+
 
 @app.post("/refresh")
 def refresh():
