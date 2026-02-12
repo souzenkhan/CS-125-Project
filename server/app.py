@@ -184,10 +184,23 @@ def recommend(req: RecommendRequest):
             print("Restaurant:", r.get("name"), "Score:", score)
 
     # Sort by TF-IDF similarity
-    scored_results.sort(key=lambda x: x[0], reverse=True)
+    #scored_results.sort(key=lambda x: x[0], reverse=True)
+
+    scored_results.sort(
+    key=lambda x: (
+        x[0],  # TF-IDF score
+        get_number(x[1].get("rating"), 0.0),
+        get_number(x[1].get("review_count"), 0.0)
+    ),
+    reverse=True
+    )
+
+    print("TOP SORTED RESULTS:")
+    for score, r in scored_results[:5]:
+        print(r.get("name"), score)
 
     # Replace results list
-    results = [r for score, r in scored_results[:req.top_k]]
+    #results = [r for score, r in scored_results[:req.top_k]]
 
 
     output: List[Dict[str, Any]] = []
