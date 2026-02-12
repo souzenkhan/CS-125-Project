@@ -1,48 +1,24 @@
+# server/app.py
 import json
+import math
+import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
-
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-vectorizer = None
-tfidf_matrix = None
-id_to_index = None
-restaurants_cache = None
-
+# ----------------------------
+# FastAPI app
+# ----------------------------
 app = FastAPI(title="Project36 Restaurant Recommender", version="0.1.0")
 
-
-@app.on_event("startup")
-def build_tfidf_index():
-    global vectorizer, tfidf_matrix, id_to_index, restaurants_cache
-
-    restaurants = load_restaurants("../data/restaurants.json")
-    restaurants_cache = restaurants
-
-    corpus = []
-    id_to_index = {}
-
-    for idx, r in enumerate(restaurants):
-        text = f"{r.get('name','')} {r.get('menu_text','')} {r.get('cuisines','')}"
-        corpus.append(text)
-        id_to_index[r.get("id")] = idx
-
-    vectorizer = TfidfVectorizer(stop_words="english")
-    tfidf_matrix = vectorizer.fit_transform(corpus)
-
-    print(f"TF-IDF ready: {tfidf_matrix.shape[0]} documents")
-
-
 # ----------------------------
-# Load restaurant data
+# Paths / Data loading
 # ----------------------------
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_PATH = REPO_ROOT / "data" / "restaurants.json"
-
 
 def load_restaurants(path: Path) -> List[Dict[str, Any]]:
     """Loads restaurant data from JSON.
@@ -68,7 +44,6 @@ def load_restaurants(path: Path) -> List[Dict[str, Any]]:
             "restaurants.json must be a list OR an object with a 'restaurants' list."
         )
 
-    # Ensure each entry is an object
     cleaned: List[Dict[str, Any]] = []
     for i, r in enumerate(restaurants):
         if isinstance(r, dict):
@@ -78,151 +53,263 @@ def load_restaurants(path: Path) -> List[Dict[str, Any]]:
 
     return cleaned
 
-
+# Global cache (reloaded on refresh)
 RESTAURANTS: List[Dict[str, Any]] = load_restaurants(DATA_PATH)
 
 # ----------------------------
-# API Models
+# TF-IDF index globals
 # ----------------------------
-
-class RecommendRequest(BaseModel):
-    # Week 1: keep it minimal. Add more fields later (distance, vegan, etc.)
-    halal: bool = False
-    top_k: int = Field(default=5, ge=1, le=50)
-    query: Optional[str] = None
-
+vectorizer: Optional[TfidfVectorizer] = None
+tfidf_matrix = None  # scipy sparse matrix
+id_to_index: Dict[str, int] = {}
 
 # ----------------------------
-# Helpers
+# TF-IDF document text builder
 # ----------------------------
+_PUNCT_RE = re.compile(r"[^a-z0-9\s]")
+_WS_RE = re.compile(r"\s+")
 
+def _as_str_list(x: Any) -> List[str]:
+    if x is None:
+        return []
+    if isinstance(x, list):
+        return [str(v) for v in x if v is not None]
+    return [str(x)]
+
+def _clean(s: str) -> str:
+    s = s.lower()
+    s = _PUNCT_RE.sub(" ", s)
+    s = _WS_RE.sub(" ", s).strip()
+    return s
+
+def _expand_tags(tags: List[str]) -> List[str]:
+    """Include both underscore and space forms, e.g., gluten_free + gluten free."""
+    expanded: List[str] = []
+    for t in tags:
+        expanded.append(t)
+        if "_" in t:
+            expanded.append(t.replace("_", " "))
+    return expanded
+
+def build_doc_text(r: Dict[str, Any]) -> str:
+    name = r.get("name", "") or ""
+    cuisines = _as_str_list(r.get("cuisines"))
+    categories = _as_str_list(r.get("categories"))
+    menu_text = r.get("menu_text") or ""
+    dietary_tags = _as_str_list(r.get("dietary_tags"))
+    dietary_expanded = _expand_tags(dietary_tags)
+
+    # Price token helps "cheap" vibes indirectly ($, $$, $$$, $$$$)
+    price_token = ""
+    pl = r.get("price_level")
+    if isinstance(pl, int) and 1 <= pl <= 4:
+        price_token = "$" * pl
+
+    parts: List[str] = []
+    parts.append(name)
+    parts.extend(cuisines)
+    parts.extend(categories)
+    parts.append(menu_text)
+    parts.append(price_token)
+
+    # Upweight dietary tags by repeating (expanded)
+    parts.extend(dietary_expanded)
+    parts.extend(dietary_expanded)
+
+    return _clean(" ".join(p for p in parts if p))
+
+# ----------------------------
+# Helpers (numbers, distance, etc.)
+# ----------------------------
 def get_number(x: Any, default: float = 0.0) -> float:
     try:
         if x is None:
             return default
-        # Avoid treating bool as number
         if isinstance(x, bool):
             return default
         return float(x)
     except (TypeError, ValueError):
         return default
 
+# Campus center (approx) - simple demo reference point
+CAMPUS_LAT = 33.6405
+CAMPUS_LNG = -117.8443
+MAX_DISTANCE_MILES = 2.0  # beyond this distance_score becomes 0
+
+def haversine_miles(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    R = 3958.8
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lng2 - lng1)
+
+    a = (math.sin(dphi / 2) ** 2 +
+         math.cos(phi1) * math.cos(phi2) * (math.sin(dlambda / 2) ** 2))
+    return 2 * R * math.asin(math.sqrt(a))
+
+def distance_score(r: Dict[str, Any]) -> float:
+    lat = get_number(r.get("lat"), None)  # type: ignore[arg-type]
+    lng = get_number(r.get("lng"), None)  # type: ignore[arg-type]
+    if lat is None or lng is None:
+        return 0.0
+
+    d = haversine_miles(CAMPUS_LAT, CAMPUS_LNG, float(lat), float(lng))
+    if d >= MAX_DISTANCE_MILES:
+        return 0.0
+
+    return max(0.0, 1.0 - (d / MAX_DISTANCE_MILES))
+
+def open_score(r: Dict[str, Any]) -> float:
+    """
+    Simple heuristic:
+    - if hours_text contains 'closed' => 0
+    - if it contains am/pm => 1
+    - otherwise => 0.5
+    """
+    hours = (r.get("hours_text") or "").lower()
+    if "closed" in hours:
+        return 0.0
+    if "am" in hours or "pm" in hours:
+        return 1.0
+    return 0.5
+
+def rating_score(r: Dict[str, Any]) -> float:
+    rating = get_number(r.get("rating"), 0.0)
+    return min(max(rating / 5.0, 0.0), 1.0)
+
+# ----------------------------
+# API Models
+# ----------------------------
+class RecommendRequest(BaseModel):
+    halal: bool = False
+    top_k: int = Field(default=5, ge=1, le=50)
+    query: Optional[str] = None
+
+# ----------------------------
+# Build TF-IDF at startup
+# ----------------------------
+@app.on_event("startup")
+def build_tfidf_index() -> None:
+    global vectorizer, tfidf_matrix, id_to_index, RESTAURANTS
+
+    # Load fresh in case file changed before startup
+    RESTAURANTS = load_restaurants(DATA_PATH)
+
+    corpus: List[str] = []
+    id_to_index = {}
+
+    for idx, r in enumerate(RESTAURANTS):
+        corpus.append(build_doc_text(r))
+        rid = r.get("id")
+        if isinstance(rid, str):
+            id_to_index[rid] = idx
+
+    vectorizer = TfidfVectorizer(stop_words="english")
+    tfidf_matrix = vectorizer.fit_transform(corpus)
+
+    print(f"TF-IDF ready: {tfidf_matrix.shape[0]} documents")
 
 # ----------------------------
 # Routes
 # ----------------------------
-
 @app.get("/health")
 def health():
     return {"ok": True, "count": len(RESTAURANTS)}
 
-
 @app.post("/recommend")
 def recommend(req: RecommendRequest):
-
-    print("🔥 RECOMMEND CALLED 🔥")
     if not RESTAURANTS:
         raise HTTPException(status_code=500, detail="No restaurant data loaded.")
+    if vectorizer is None or tfidf_matrix is None:
+        raise HTTPException(status_code=500, detail="TF-IDF index not initialized.")
 
-    results = list(RESTAURANTS)
+    # Start from full set
+    candidates = list(RESTAURANTS)
 
-    # Hard filter: halal requirement (uses your schema key: dietary_tags)
+    # Hard filter: halal
     if req.halal:
-        results = [
-            r for r in results
+        candidates = [
+            r for r in candidates
             if "halal" in (r.get("dietary_tags") or [])
         ]
 
-    # Stub ranking: rating desc, then review_count desc
-    #results.sort(
-        #key=lambda r: (
-            #get_number(r.get("rating"), 0.0),
-            #get_number(r.get("review_count"), 0.0),
-        #),
-        #reverse=True
-    #)
-
-    # Build query string from request
-    query_text = req.query or ""
-
-    print("QUERY TEXT:", query_text)
-
+    # Build query text
+    query_text = (req.query or "").strip()
     if req.halal:
-        query_text += " halal "
+        # reinforce importance (also helps explanations)
+        query_text = (query_text + " halal").strip()
 
-    if query_text.strip() == "":
+    if query_text == "":
         query_text = "food"
 
-    if req.halal:
-        query_text += " halal "
-
-    # You can expand this later with more features
-    # Example: add cuisines if they exist
-    # query_text += " " + (req.cuisine or "")
-
-    if query_text.strip() == "":
-        query_text = "restaurant"
-
-    # Vectorize query
+    # TF-IDF query vector
     query_vec = vectorizer.transform([query_text])
 
-    # Compute cosine similarity
+    # Cosine similarity with TF-IDF vectors (since sklearn TF-IDF vectors are L2-normalized)
     similarity_scores = (tfidf_matrix @ query_vec.T).toarray().flatten()
 
-    print("QUERY:", query_text)
-    print("Similarity scores shape:", similarity_scores.shape)
-    print("First 10 similarity scores:", similarity_scores[:10])
+    scored_results: List[tuple] = []
 
-    # Attach scores to filtered results
-    scored_results = []
+    for r in candidates:
+        rid = r.get("id")
+        if not isinstance(rid, str):
+            continue
+        idx = id_to_index.get(rid)
+        if idx is None:
+            continue
 
-    for r in results:
-        idx = id_to_index.get(r.get("id"))
-        if idx is not None:
-            score = float(similarity_scores[idx])
-            scored_results.append((score, r))
-            print("Restaurant:", r.get("name"), "Score:", score)
+        tfidf = float(similarity_scores[idx])
+        dist = distance_score(r)
+        opn = open_score(r)
+        rate = rating_score(r)
 
-    # Sort by TF-IDF similarity
-    #scored_results.sort(key=lambda x: x[0], reverse=True)
+        final_score = (
+            0.50 * tfidf +
+            0.20 * dist +
+            0.20 * opn +
+            0.10 * rate
+        )
 
-    scored_results.sort(
-    key=lambda x: (
-        x[0],  # TF-IDF score
-        get_number(x[1].get("rating"), 0.0),
-        get_number(x[1].get("review_count"), 0.0)
-    ),
-    reverse=True
-    )
+        scored_results.append((final_score, tfidf, dist, opn, rate, r))
 
-    print("TOP SORTED RESULTS:")
-    for score, r in scored_results[:5]:
-        print(r.get("name"), score)
-
-    # Replace results list
-    #results = [r for score, r in scored_results[:req.top_k]]
-
+    scored_results.sort(key=lambda x: x[0], reverse=True)
 
     output: List[Dict[str, Any]] = []
 
-    for score, r in scored_results[: req.top_k]:
-
+    for final_score, tfidf, dist, opn, rate, r in scored_results[: req.top_k]:
         dietary_tags = r.get("dietary_tags") or []
-        rating = get_number(r.get("rating"), 0.0)
 
         why: List[str] = []
 
+        # Dietary
         if req.halal and "halal" in dietary_tags:
-            why.append("matches halal")
+            why.append("matches halal requirement")
 
-        if score > 0:
-            why.append("text match")
+        # Text
+        if tfidf > 0.0:
+            why.append("matches search terms")
+
+        # Distance
+        if dist > 0.7:
+            why.append("very close to campus")
+        elif dist > 0.4:
+            why.append("near campus")
+
+        # Open
+        if opn == 1.0:
+            why.append("open now")
+        elif opn == 0.0:
+            why.append("may be closed")
+
+        # Rating
+        if rate >= 0.8:
+            why.append(f"high rating ({r.get('rating')})")
 
         output.append({
+            # Restaurant fields (unchanged)
             "id": r.get("id"),
             "name": r.get("name"),
             "dietary_tags": dietary_tags,
-            "rating": rating,
+            "rating": get_number(r.get("rating"), 0.0),
             "price_level": r.get("price_level"),
             "address": r.get("address"),
             "lat": r.get("lat"),
@@ -234,16 +321,37 @@ def recommend(req: RecommendRequest):
             "menu_text": r.get("menu_text"),
             "cuisines": r.get("cuisines"),
             "categories": r.get("categories"),
-            "score": round(score, 4),
+
+            # Scoring outputs
+            "score": round(final_score, 4),
+            "score_components": {
+                "tfidf": round(tfidf, 4),
+                "distance": round(dist, 4),
+                "open": round(opn, 4),
+                "rating": round(rate, 4),
+            },
             "why": why
         })
-
 
     return output
 
 @app.post("/refresh")
 def refresh():
-    """Reload restaurants.json from disk (simple 'refresh' mechanism for your demo)."""
-    global RESTAURANTS
+    """Reload restaurants.json and rebuild TF-IDF index (simple refresh mechanism for demo)."""
+    global RESTAURANTS, vectorizer, tfidf_matrix, id_to_index
+
     RESTAURANTS = load_restaurants(DATA_PATH)
+
+    corpus: List[str] = []
+    id_to_index = {}
+
+    for idx, r in enumerate(RESTAURANTS):
+        corpus.append(build_doc_text(r))
+        rid = r.get("id")
+        if isinstance(rid, str):
+            id_to_index[rid] = idx
+
+    vectorizer = TfidfVectorizer(stop_words="english")
+    tfidf_matrix = vectorizer.fit_transform(corpus)
+
     return {"ok": True, "count": len(RESTAURANTS), "reloaded_from": str(DATA_PATH)}
