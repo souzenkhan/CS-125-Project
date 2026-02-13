@@ -12,16 +12,17 @@ struct Restaurant: Identifiable, Codable {
     let name: String
     let dietary_tags: [String]
     let rating: Double
+    let price_level: Int?
+    let address: String?
+    let lat: Double?
+    let lng: Double?
     let review_count: Int?
-    let score: Double
+    let score: Double?
     let why: [String]
 }
 
 struct RecommendRequest: Codable {
     let halal: Bool
     let top_k: Int
-}
-
-struct RecommendResponse: Codable {
-    let results: [Restaurant]
+    let query: String?
 }
