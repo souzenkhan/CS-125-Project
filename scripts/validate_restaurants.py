@@ -35,6 +35,10 @@ def fail(errors: List[str]) -> None:
 def is_number(x: Any) -> bool:
     return isinstance(x, (int, float)) and not isinstance(x, bool)
 
+def is_non_empty_string(x: Any) -> bool:
+    return isinstance(x, str) and x.strip() != ""
+
+
 def validate_lat_lng(lat: Any, lng: Any) -> Optional[str]:
     if not is_number(lat) or not is_number(lng):
         return "lat/lng must be numbers"
@@ -52,22 +56,33 @@ def validate_restaurant(obj: Dict[str, Any], idx: int, seen_ids: Set[str]) -> Li
         if field not in obj:
             errs.append(f"{prefix}: missing required field '{field}'")
             continue
+
         val = obj[field]
+
+        # numeric fields handled separately
         if field in ("rating", "lat", "lng"):
             if not is_number(val):
                 errs.append(f"{prefix}.{field}: must be a number")
-        elif not isinstance(val, expected_type):
+            continue
+
+        # required string fields must not be empty/whitespace
+        if expected_type == str and not is_non_empty_string(val):
+            errs.append(f"{prefix}.{field}: cannot be empty")
+            continue
+
+        if not isinstance(val, expected_type):
             errs.append(f"{prefix}.{field}: expected {expected_type}, got {type(val).__name__}")
 
-    # id uniqueness
+
+    # id uniqueness (use stripped id so whitespace doesn't create "different" IDs)
     rid = obj.get("id")
     if isinstance(rid, str):
-        if rid.strip() == "":
-            errs.append(f"{prefix}.id: cannot be empty")
-        elif rid in seen_ids:
-            errs.append(f"{prefix}.id: duplicate id '{rid}'")
-        else:
-            seen_ids.add(rid)
+        rid_clean = rid.strip()
+        if rid_clean in seen_ids:
+            errs.append(f"{prefix}.id: duplicate id '{rid_clean}'")
+        elif rid_clean != "":
+            seen_ids.add(rid_clean)
+
 
     # rating bounds 0..5
     rating = obj.get("rating")
