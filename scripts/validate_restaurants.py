@@ -88,6 +88,7 @@ def validate_restaurant(
             errs.append(f"{prefix}.id: duplicate id '{rid_clean}'")
         elif rid_clean != "":
             seen_ids.add(rid_clean)
+<<<<<<< HEAD
     
 
     # name uniqueness (case-insensitive, whitespace-normalized)
@@ -100,6 +101,9 @@ def validate_restaurant(
             errs.append(f"{prefix}.name: duplicate name '{name.strip()}'")
         else:
             seen_names.add(name_clean)
+=======
+
+>>>>>>> 8b30a56 (Task 17: enforce stricter restaurant dataset validation)
 
     # rating bounds 0..5
     rating = obj.get("rating")
