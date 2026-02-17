@@ -315,6 +315,28 @@ def build_tfidf_index() -> None:
 
     print(f"TF-IDF ready: {tfidf_matrix.shape[0]} documents")
 
+def ensure_index_ready():
+    global vectorizer, tfidf_matrix, id_to_index, RESTAURANTS
+
+    if vectorizer is not None and tfidf_matrix is not None:
+        return
+
+    # Load data if needed
+    if not RESTAURANTS:
+        RESTAURANTS = load_restaurants(DATA_PATH)
+
+    corpus = []
+    id_to_index = {}
+
+    for idx, r in enumerate(RESTAURANTS):
+        corpus.append(build_doc_text(r))
+        rid = r.get("id")
+        if isinstance(rid, str):
+            id_to_index[rid] = idx
+
+    vectorizer = TfidfVectorizer(stop_words="english")
+    tfidf_matrix = vectorizer.fit_transform(corpus)
+
 
 # ----------------------------
 # Routes
@@ -326,10 +348,12 @@ def health():
 
 @app.post("/recommend")
 def recommend(req: RecommendRequest):
-    if not RESTAURANTS:
-        raise HTTPException(status_code=500, detail="No restaurant data loaded.")
-    if vectorizer is None or tfidf_matrix is None:
-        raise HTTPException(status_code=500, detail="TF-IDF index not initialized.")
+    #if not RESTAURANTS:
+        #raise HTTPException(status_code=500, detail="No restaurant data loaded.")
+    #if vectorizer is None or tfidf_matrix is None:
+        #raise HTTPException(status_code=500, detail="TF-IDF index not initialized.")
+    ensure_index_ready()
+    
 
     candidates = list(RESTAURANTS)
 
