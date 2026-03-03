@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from sklearn.feature_extraction.text import TfidfVectorizer
+from collections import Counter
 
 # ----------------------------
 # FastAPI app
@@ -64,6 +65,33 @@ RESTAURANTS: List[Dict[str, Any]] = load_restaurants(DATA_PATH)
 vectorizer: Optional[TfidfVectorizer] = None
 tfidf_matrix = None  # scipy sparse matrix
 id_to_index: Dict[str, int] = {}
+
+# ----------------------------
+# User Profile (single-user prototype)
+# ----------------------------
+class UserProfile:
+    def __init__(self):
+        self.dietary_required: List[str] = []
+        self.preferred_cuisines: List[str] = []
+        self.disliked_cuisines: List[str] = []
+        self.price_preference: int = 2
+        self.click_history: List[str] = []
+
+    def record_click(self, restaurant_id: str):
+        self.click_history.append(restaurant_id)
+
+    def cuisine_click_counts(self, restaurant_lookup: Dict[str, Dict[str, Any]]) -> Counter:
+        counter = Counter()
+        for rid in self.click_history:
+            r = restaurant_lookup.get(rid)
+            if not r:
+                continue
+            for c in r.get("cuisines", []) or []:
+                counter[c.lower()] += 1
+        return counter
+
+
+user_profile = UserProfile()
 
 # ----------------------------
 # TF-IDF document text builder
@@ -187,6 +215,14 @@ def open_score(r: Dict[str, Any]) -> float:
 def rating_score(r: Dict[str, Any]) -> float:
     rating = get_number(r.get("rating"), 0.0)
     return min(max(rating / 5.0, 0.0), 1.0)
+
+def price_score(r: Dict[str, Any]) -> float:
+    restaurant_price = r.get("price_level")
+    if not isinstance(restaurant_price, int):
+        return 0.5  # neutral if unknown
+
+    diff = abs(user_profile.price_preference - restaurant_price)
+    return max(0.0, 1.0 - (diff / 4.0))
 
 
 def miles_away(r: Dict[str, Any]) -> Optional[float]:
@@ -374,6 +410,9 @@ def recommend(req: RecommendRequest):
     query_vec = vectorizer.transform([query_text])
     similarity_scores = (tfidf_matrix @ query_vec.T).toarray().flatten()
 
+    restaurant_lookup = {r["id"]: r for r in RESTAURANTS if isinstance(r.get("id"), str)}
+    cuisine_counts = user_profile.cuisine_click_counts(restaurant_lookup)
+
     scored_results: List[tuple] = []
 
     for r in candidates:
@@ -388,21 +427,45 @@ def recommend(req: RecommendRequest):
         dist = distance_score(r)
         opn = open_score(r)
         rate = rating_score(r)
+        # Price preference score
+        price = price_score(r)
+
+        # Personal boost
+        personal_boost = 0.0
+        for cuisine in r.get("cuisines", []) or []:
+            cuisine_lower = cuisine.lower()
+
+            # Boost clicked cuisines
+            if cuisine_lower in cuisine_counts:
+                personal_boost += 0.05 * cuisine_counts[cuisine_lower]
+
+            # Boost explicitly preferred cuisines
+            if cuisine_lower in user_profile.preferred_cuisines:
+                personal_boost += 0.05
+
+            # Penalty for disliked cuisines
+            if cuisine_lower in user_profile.disliked_cuisines:
+                personal_boost -= 0.05
+
+        # Clamp to safe range
+        personal_boost = max(-0.2, min(personal_boost, 0.4))
 
         final_score = (
-            0.50 * tfidf +
-            0.20 * dist +
-            0.20 * opn +
-            0.10 * rate
+            0.40 * tfidf +
+            0.15 * dist +
+            0.15 * opn +
+            0.10 * rate +
+            0.10 * price +
+            0.10 * personal_boost
         )
 
-        scored_results.append((final_score, tfidf, dist, opn, rate, r))
+        scored_results.append((final_score, tfidf, dist, opn, rate, price, personal_boost, r))
 
     scored_results.sort(key=lambda x: x[0], reverse=True)
 
     output: List[Dict[str, Any]] = []
 
-    for final_score, tfidf, dist, opn, rate, r in scored_results[: req.top_k]:
+    for final_score, tfidf, dist, opn, rate, price, personal_boost, r in scored_results[: req.top_k]:
         dietary_tags = r.get("dietary_tags") or []
         dist_miles = miles_away(r)
 
@@ -441,11 +504,28 @@ def recommend(req: RecommendRequest):
                 "distance": round(dist, 4),
                 "open": round(opn, 4),
                 "rating": round(rate, 4),
+                "price": round(price, 4),
+                "personal_boost": round(personal_boost, 4),
             },
             "why": why
         })
 
     return output
+
+class FeedbackRequest(BaseModel):
+    restaurant_id: str
+
+
+@app.post("/feedback")
+def record_feedback(feedback: FeedbackRequest):
+    rid = feedback.restaurant_id
+
+    if rid not in [r.get("id") for r in RESTAURANTS]:
+        raise HTTPException(status_code=400, detail="Invalid restaurant_id")
+
+    user_profile.record_click(rid)
+
+    return {"status": "recorded", "click_history_count": len(user_profile.click_history)}
 
 
 @app.post("/refresh")
