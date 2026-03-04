@@ -1,6 +1,10 @@
 ﻿[
   {
+<<<<<<< HEAD
     "id": "moongoat_coffee",
+=======
+    "id": "bad_test",
+>>>>>>> 4985b94 (Task 27: strengthen dataset validator)
     "name": "MoonGoat Coffee",
     "dietary_tags": [],
     "rating": 9,
