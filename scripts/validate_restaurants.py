@@ -3,6 +3,7 @@ import sys
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 ALLOWED_DIETARY_TAGS = {"halal", "vegan", "pescatarian", "vegetarian", "gluten_free"}
+MIN_MENU_TEXT_LEN = 30
 
 REQUIRED_FIELDS = {
     "id": str,
@@ -48,7 +49,12 @@ def validate_lat_lng(lat: Any, lng: Any) -> Optional[str]:
         return f"lng out of range (-180..180): {lng}"
     return None
 
-def validate_restaurant(obj: Dict[str, Any], idx: int, seen_ids: Set[str]) -> List[str]:
+def validate_restaurant(
+    obj: Dict[str, Any],
+    idx: int,
+    seen_ids: Set[str],
+    seen_names: Set[str],
+) -> List[str]:
     errs: List[str] = []
     prefix = f"restaurants[{idx}]"
 
@@ -82,7 +88,18 @@ def validate_restaurant(obj: Dict[str, Any], idx: int, seen_ids: Set[str]) -> Li
             errs.append(f"{prefix}.id: duplicate id '{rid_clean}'")
         elif rid_clean != "":
             seen_ids.add(rid_clean)
+    
 
+    # name uniqueness (case-insensitive, whitespace-normalized)
+    name = obj.get("name")
+    if isinstance(name, str):
+        name_clean = " ".join(name.strip().lower().split())
+        if name_clean == "":
+            errs.append(f"{prefix}.name: cannot be empty")
+        elif name_clean in seen_names:
+            errs.append(f"{prefix}.name: duplicate name '{name.strip()}'")
+        else:
+            seen_names.add(name_clean)
 
     # rating bounds 0..5
     rating = obj.get("rating")
@@ -101,13 +118,32 @@ def validate_restaurant(obj: Dict[str, Any], idx: int, seen_ids: Set[str]) -> Li
 
     # dietary_tags allowed values
     tags = obj.get("dietary_tags")
-    if isinstance(tags, list):
-        for t in tags:
-            if not isinstance(t, str):
-                errs.append(f"{prefix}.dietary_tags: all tags must be strings")
-                break
-            if t not in ALLOWED_DIETARY_TAGS:
-                errs.append(f"{prefix}.dietary_tags: invalid tag '{t}' (allowed: {sorted(ALLOWED_DIETARY_TAGS)})")
+
+    if not isinstance(tags, list):
+        errs.append(f"{prefix}.dietary_tags: must be a list")
+    else:
+        if len(tags) == 0:
+            errs.append(f"{prefix}.dietary_tags: must have at least one tag")
+        else:
+            seen_tags = set()
+            for t in tags:
+                if not isinstance(t, str):
+                    errs.append(f"{prefix}.dietary_tags: all tags must be strings")
+                    break
+
+                tag = t.strip()
+                if tag == "":
+                    errs.append(f"{prefix}.dietary_tags: tags cannot be empty strings")
+                    continue
+
+                if tag not in ALLOWED_DIETARY_TAGS:
+                    errs.append(
+                        f"{prefix}.dietary_tags: invalid tag '{tag}' (allowed: {sorted(ALLOWED_DIETARY_TAGS)})"
+                    )
+                if tag in seen_tags:
+                    errs.append(f"{prefix}.dietary_tags: duplicate tag '{tag}'")
+                else:
+                    seen_tags.add(tag)
 
     # source allowed values
     src = obj.get("source")
@@ -126,16 +162,31 @@ def validate_restaurant(obj: Dict[str, Any], idx: int, seen_ids: Set[str]) -> Li
             val = obj[field]
             if val is None:
                 continue
+
             if field in ("cuisines", "categories"):
                 if not isinstance(val, list):
                     errs.append(f"{prefix}.{field}: must be list or null")
                 else:
-                    if any(not isinstance(x, str) for x in val):
-                        errs.append(f"{prefix}.{field}: must be list of strings")
+                    if len(val) == 0:
+                        errs.append(f"{prefix}.{field}: cannot be empty")
+                    elif any(not isinstance(x, str) or x.strip() == "" for x in val):
+                        errs.append(f"{prefix}.{field}: must be a non-empty list of non-empty strings")
+
+            elif field == "menu_text":
+                if not isinstance(val, str):
+                    errs.append(f"{prefix}.menu_text: must be str or null")
+                else:
+                    if len(val.strip()) < MIN_MENU_TEXT_LEN:
+                        errs.append(
+                            f"{prefix}.menu_text: must be at least {MIN_MENU_TEXT_LEN} chars, got {len(val.strip())}"
+                        )
+
             elif field == "review_count":
                 if not (isinstance(val, int) and not isinstance(val, bool)):
                     errs.append(f"{prefix}.review_count: must be int or null")
+
             else:
+                # phone, etc.
                 if not isinstance(val, expected_type):
                     errs.append(f"{prefix}.{field}: must be {expected_type.__name__} or null")
 
@@ -169,12 +220,13 @@ def main() -> None:
 
     errors: List[str] = []
     seen_ids: Set[str] = set()
+    seen_names: Set[str] = set()
 
     for i, item in enumerate(restaurants):
         if not isinstance(item, dict):
             errors.append(f"restaurants[{i}]: expected object, got {type(item).__name__}")
             continue
-        errors.extend(validate_restaurant(item, i, seen_ids))
+        errors.extend(validate_restaurant(item, i, seen_ids, seen_names))
 
     if errors:
         fail(errors)
