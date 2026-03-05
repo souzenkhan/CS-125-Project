@@ -39,10 +39,10 @@ struct ResultsView: View {
                     }
                 }
 
-                if !restaurant.dietary_tags.isEmpty {
-                    Text(restaurant.dietary_tags.joined(separator: " • "))
+                if let cuisines = restaurant.cuisines {
+                    Text(cuisines.joined(separator: " • "))
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.secondary)        
                 }
 
                 if !restaurant.why.isEmpty {
