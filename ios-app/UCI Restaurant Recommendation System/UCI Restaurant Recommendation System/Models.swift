@@ -11,6 +11,7 @@ struct Restaurant: Identifiable, Codable {
     let id: String
     let name: String
     let dietary_tags: [String]
+    let cuisines: [String]? 
     let rating: Double
     let price_level: Int?
     let address: String?
