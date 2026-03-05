@@ -9,6 +9,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from sklearn.feature_extraction.text import TfidfVectorizer
 from collections import Counter
+from datetime import datetime
 
 # ----------------------------
 # FastAPI app
@@ -381,6 +382,35 @@ def ensure_index_ready():
 def health():
     return {"ok": True, "count": len(RESTAURANTS)}
 
+def get_time_of_day():
+    hour = datetime.now().hour
+
+    if 5 <= hour < 11:
+        return "morning"
+    elif 11 <= hour < 16:
+        return "lunch"
+    else:
+        return "dinner"
+    
+def time_context_boost(restaurant, time_of_day):
+    tags = restaurant.get("tags") or []
+    cuisines = restaurant.get("cuisines") or []
+
+    boost = 0.0
+
+    if time_of_day == "morning":
+        if "cafe" in tags or "coffee" in tags or "breakfast" in cuisines:
+            boost = 0.15
+
+    elif time_of_day == "lunch":
+        if "fast food" in cuisines or "sandwich" in cuisines:
+            boost = 0.12
+
+    elif time_of_day == "dinner":
+        if "restaurant" in tags or "dinner" in cuisines:
+            boost = 0.10
+
+    return boost
 
 @app.post("/recommend")
 def recommend(req: RecommendRequest):
@@ -389,6 +419,7 @@ def recommend(req: RecommendRequest):
     #if vectorizer is None or tfidf_matrix is None:
         #raise HTTPException(status_code=500, detail="TF-IDF index not initialized.")
     ensure_index_ready()
+    time_of_day = get_time_of_day()
     
 
     candidates = list(RESTAURANTS)
@@ -429,6 +460,7 @@ def recommend(req: RecommendRequest):
         rate = rating_score(r)
         # Price preference score
         price = price_score(r)
+        time_boost = time_context_boost(r, time_of_day)
 
         # Personal boost
         personal_boost = 0.0
@@ -456,7 +488,8 @@ def recommend(req: RecommendRequest):
             0.15 * opn +
             0.10 * rate +
             0.10 * price +
-            0.10 * personal_boost
+            0.10 * personal_boost +
+            0.10 * time_boost
         )
 
         scored_results.append((final_score, tfidf, dist, opn, rate, price, personal_boost, r))
@@ -506,6 +539,7 @@ def recommend(req: RecommendRequest):
                 "rating": round(rate, 4),
                 "price": round(price, 4),
                 "personal_boost": round(personal_boost, 4),
+                "time_boost": round(time_boost, 4),
             },
             "why": why
         })
