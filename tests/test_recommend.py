@@ -63,3 +63,22 @@ def test_query_changes_top_result():
     top2 = results2[0]["name"]
 
     assert top1 != top2
+
+#Test # 4: Time-of-day affects ranking
+def test_open_score_affects_ranking_when_closed_exists():
+    response = client.post("/recommend", json={
+        "query": "food",
+        "halal": False
+    })
+
+    assert response.status_code == 200
+    results = response.json()
+    assert len(results) > 0
+
+    # Make sure score_components include open score (time-ish signal)
+    assert "score_components" in results[0]
+    assert "open" in results[0]["score_components"]
+
+    closed_items = [r for r in results if "closed" in (r.get("hours_text") or "").lower()]
+    if closed_items:
+        assert all(r["score_components"]["open"] == 0.0 for r in closed_items)
