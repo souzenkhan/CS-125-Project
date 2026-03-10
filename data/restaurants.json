@@ -329,7 +329,7 @@
     "rating": 4.4,
     "price_level": 3,
     "address": "2957 Michelson Dr, Irvine, CA 92612",
-    "lat": 333.671807492153725, 
+    "lat": 33.671807492153725, 
     "lng": -117.8448515838456,
     "hours_text": "Mon-Thu 11am-10pm, Fri 11am-11pm, Sat 10am-11pm, Sun 10am-10pm",
     "source": "google",
@@ -342,7 +342,7 @@
     {
     "id": "wahoos_fish_tacos",
     "name": "Wahoo's Fish Tacos",
-    "dietary_tags": ["vegetarian, pescatarian"],
+    "dietary_tags": ["vegetarian", "pescatarian"],
     "rating": 4.4,
     "price_level": 2,
     "address": "2967 Michelson Dr, Irvine, CA 92612",
@@ -376,7 +376,7 @@
     {
     "id": "jans_health_bar",
     "name": "Jans_Health_bar",
-    "dietary_tags": ["vegetarian, vegan"],
+    "dietary_tags": ["vegetarian", "vegan"],
     "rating": 4.5,
     "price_level": 2,
     "address": "2963 Michelson Dr, Irvine, CA 92612",
@@ -410,7 +410,7 @@
     {
     "id": "moulin",
     "name": "moulin",
-    "dietary_tags": ["vegetarian, pescatarian"],
+    "dietary_tags": ["vegetarian", "pescatarian"],
     "rating": 4.6,
     "price_level": 3,
     "address": "1000 Bristol St N St. 10, Newport Beach, CA 92660",
@@ -427,7 +427,7 @@
     {
     "id": "sweetfin_poke_newport_beach",
     "name": "Sweetfin Poke Newport Beach ",
-    "dietary_tags": ["vegetarian, pescatarian"],
+    "dietary_tags": ["vegetarian", "pescatarian"],
     "rating": 4.5,
     "price_level": 2,
     "address": "1000 SE Bristol St, Newport Beach, CA 92660",
@@ -444,7 +444,7 @@
     {
     "id": "moris",
     "name": "Mori's",
-    "dietary_tags": ["vegetarian, vegan"],
+    "dietary_tags": ["vegetarian", "vegan"],
     "rating": 4.6,
     "price_level": 1,
     "address": "6280 Scholarship, Irvine, CA 92612",
@@ -512,7 +512,7 @@
   {
     "id": "hironori_craft_ramen",
     "name": "HiroNori Craft Ramen",
-    "dietary_tags": ["vegan, vegetarian"],
+    "dietary_tags": ["vegan", "vegetarian"],
     "rating": 4.6,
     "price_level": 2,
     "address": "2222 Michelson Dr #234, Irvine, CA 92612",
@@ -529,7 +529,7 @@
   {
     "id": "kit_coffee",
     "name": "Kit Coffee",
-    "dietary_tags": ["vegetarian, vegan"],
+    "dietary_tags": ["vegetarian", "vegan"],
     "rating": 4.6,
     "price_level": 2,
     "address": "4187 Campus Dr, Irvine, CA 92612",
