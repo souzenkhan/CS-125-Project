@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from sklearn.feature_extraction.text import TfidfVectorizer
 from collections import Counter
 from datetime import datetime
+from query_processing import expand_query
 
 # ----------------------------
 # FastAPI app
@@ -432,7 +433,7 @@ def recommend(req: RecommendRequest):
         ]
 
     # Build query text
-    query_text = (req.query or "").strip()
+    query_text = expand_query((req.query or "").strip())
     if req.halal:
         query_text = (query_text + " halal").strip()
     if query_text == "":
