@@ -10,7 +10,11 @@ from pydantic import BaseModel, Field
 from sklearn.feature_extraction.text import TfidfVectorizer
 from collections import Counter
 from datetime import datetime
-from query_processing import expand_query
+
+try:
+    from server.query_processing import expand_query
+except ImportError:
+    from query_processing import expand_query
 
 # ----------------------------
 # FastAPI app
