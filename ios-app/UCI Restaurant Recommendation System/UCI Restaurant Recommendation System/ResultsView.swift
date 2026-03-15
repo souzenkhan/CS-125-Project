@@ -20,12 +20,12 @@ struct ResultsView: View {
                         .font(.headline)
 
                     Spacer()
-
-                    if let score = restaurant.score {
-                        Text(String(format: "%.3f", score))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
+                    // This is to display restaurant score, only uncomment if we need to show it later
+                    // if let score = restaurant.score {
+                    //     Text(String(format: "%.3f", score))
+                    //         .font(.caption)
+                    //         .foregroundColor(.secondary)
+                    // }
                 }
 
                 HStack(spacing: 12) {
@@ -59,9 +59,17 @@ struct ResultsView: View {
                 }
             }
             .padding(.vertical, 6)
+            .background(Color.blue.opacity(0.08))
+            .cornerRadius(12)
+            .listRowBackground(Color.clear)
         }
-        .navigationTitle("Results")
+        .navigationTitle("Top Results")
+        .toolbarBackground(Color.blue.opacity(0.15), for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .scrollContentBackground(.hidden)
+        .background(Color.blue.opacity(0.1))
     }
+    
 
     private func distanceMiles(for r: Restaurant) -> Double? {
         guard let lat = r.lat, let lng = r.lng else { return nil }
