@@ -13,6 +13,7 @@ struct HomeView: View {
     @State private var vegan = false
     @State private var vegetarian = false
     @State private var glutenFree = false
+    @State private var transportMode = "Walk"
 
     @State private var queryText: String = ""
     @State private var maxDistance: Double = 1.0
@@ -35,18 +36,35 @@ struct HomeView: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                 }
+                .listRowBackground(Color.blue.opacity(0.1))
 
                 Section(header: Text("Dietary Preferences")) {
-                    Toggle("Halal (hard filter)", isOn: $halal)
-                    Toggle("Vegan", isOn: $vegan)
-                    Toggle("Vegetarian", isOn: $vegetarian)
-                    Toggle("Gluten Free", isOn: $glutenFree)
+                    Toggle("Halal", isOn: $halal).tint(.blue)
+                    Toggle("Vegan", isOn: $vegan).tint(.blue)
+                    Toggle("Vegetarian", isOn: $vegetarian).tint(.blue)
+                    Toggle("Gluten Free", isOn: $glutenFree).tint(.blue)
                 }
+                .listRowBackground(Color.blue.opacity(0.1))
 
-                Section(header: Text("Max Distance")) {
-                    Slider(value: $maxDistance, in: 0.5...5.0, step: 0.5)
-                    Text("\(maxDistance, specifier: "%.1f") miles")
-                }
+                Section(header: Text("Transportation")) {
+                    Picker("Mode", selection: $transportMode) {
+                        Text("Walk").tag("Walk")
+                        Text("Drive").tag("Drive")
+                    }
+                    .pickerStyle(.segmented)
+                    .onChange(of: transportMode) { _, newMode in
+                        if newMode == "Walk" {
+                            maxDistance = 2
+                        } else {
+                            maxDistance = 8
+                        }
+                    }
+                    
+
+                    Text("Showing restaurants within \(Int(maxDistance)) miles")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }.listRowBackground(Color.blue.opacity(0.1))
 
                 Section {
                     Button {
@@ -62,8 +80,11 @@ struct HomeView: View {
                     }
                     .disabled(isLoading)
                 }
+                .listRowBackground(Color.blue.opacity(0.1))
             }
             .navigationTitle("Find Food")
+            .toolbarBackground(Color.blue.opacity(0.15), for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .navigationDestination(isPresented: $showResults) {
                 ResultsView(restaurants: results, campusCenter: campusCenter)
             }
@@ -72,6 +93,8 @@ struct HomeView: View {
             } message: {
                 Text(errorMessage)
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.blue.opacity(0.10))
         }
     }
 
@@ -91,6 +114,11 @@ struct HomeView: View {
             if glutenFree { q += " gluten free gluten_free" } // include both spellings
 
             q = q.trimmingCharacters(in: .whitespacesAndNewlines)
+            if transportMode == "Walk" {
+                maxDistance = 2
+            } else {
+                maxDistance = 8
+            }
 
             let request = RecommendRequest(
                 halal: halal,
