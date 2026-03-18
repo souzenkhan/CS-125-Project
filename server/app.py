@@ -332,6 +332,7 @@ class RecommendRequest(BaseModel):
     halal: bool = False
     top_k: int = Field(default=5, ge=1, le=50)
     query: Optional[str] = None
+    max_distance_miles: float = 5.0
 
 
 # ----------------------------
@@ -428,6 +429,15 @@ def recommend(req: RecommendRequest):
     
 
     candidates = list(RESTAURANTS)
+
+    # Distance filter
+    if req.max_distance_miles is not None:
+        filtered = []
+        for r in candidates:
+            dist_miles = miles_away(r)
+            if dist_miles <= req.max_distance_miles:
+                filtered.append(r)
+        candidates = filtered
 
     # Hard filter: halal
     if req.halal:
